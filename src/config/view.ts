@@ -40,3 +40,13 @@ export const AIRCRAFT_ICON_PX = 46;
 export const CLOSEUP_SIZE_PX = { w: 150, h: 104 };
 /** A scroll position within this many px of the right end counts as "following the aircraft". */
 export const PIN_TOLERANCE_PX = 2;
+
+// --- Fine-adjust buttons beside the pitch and throttle sliders ---
+/** Elevator change per press of a pitch fine-adjust button, degrees. */
+export const FINE_STEP_ELEVATOR_DEG = 0.1;
+/** Throttle change per press of a throttle fine-adjust button, percent. */
+export const FINE_STEP_THROTTLE_PCT = 0.5;
+/** Holding a fine-adjust button repeats it: first after this delay, ms... */
+export const FINE_REPEAT_DELAY_MS = 350;
+/** ...then at this interval, ms. */
+export const FINE_REPEAT_INTERVAL_MS = 70;
