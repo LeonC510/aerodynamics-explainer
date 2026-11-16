@@ -52,6 +52,17 @@ export function liftCoefficientStatic(alphaIn: number): number {
   return extended(CL_ALPHA, 0, flatPlateLift, alpha) * scale;
 }
 
+/** Drag for a given angle of attack and the static lift coefficient at that angle. */
+function dragFromLift(alpha: number, cl: number): number {
+  const source = extended(CD_ALPHA, CD0, flatPlateDrag, alpha);
+  if (alpha < CD_ALPHA[0][0] || alpha >= STALL_ALPHA_RAD) return source;
+  const polar = CALIBRATION.cd0 + CALIBRATION.kInduced * cl * cl;
+  const blendStart = STALL_ALPHA_RAD - DRAG_BLEND_BELOW_STALL_RAD;
+  if (alpha <= blendStart) return polar;
+  const w = (alpha - blendStart) / DRAG_BLEND_BELOW_STALL_RAD;
+  return (1 - w) * polar + w * source;
+}
+
 /**
  * Drag coefficient from angle of attack alone (rad).
  * Below the stall: the handbook-calibrated polar CD = cd0 + kInduced·CL².
@@ -59,15 +70,19 @@ export function liftCoefficientStatic(alphaIn: number): number {
  */
 export function dragCoefficientStatic(alphaIn: number): number {
   const alpha = wrapAngle(alphaIn);
-  const source = extended(CD_ALPHA, CD0, flatPlateDrag, alpha);
-  const lo = CD_ALPHA[0][0];
-  if (alpha < lo || alpha >= STALL_ALPHA_RAD) return source;
+  return dragFromLift(alpha, liftCoefficientStatic(alpha));
+}
+
+/** The parts of lift and drag that depend on angle of attack only. */
+export interface StaticCoeffs {
+  cl: number;
+  cd: number;
+}
+
+export function staticCoefficients(alphaIn: number): StaticCoeffs {
+  const alpha = wrapAngle(alphaIn);
   const cl = liftCoefficientStatic(alpha);
-  const polar = CALIBRATION.cd0 + CALIBRATION.kInduced * cl * cl;
-  const blendStart = STALL_ALPHA_RAD - DRAG_BLEND_BELOW_STALL_RAD;
-  if (alpha <= blendStart) return polar;
-  const w = (alpha - blendStart) / DRAG_BLEND_BELOW_STALL_RAD;
-  return (1 - w) * polar + w * source;
+  return { cl, cd: dragFromLift(alpha, cl) };
 }
 
 /** Extra drag coefficient from a windmilling propeller: full at idle, zero by 10% throttle. */
@@ -109,12 +124,16 @@ function stabilityAlpha(alpha: number): number {
   return (Math.sign(alpha) * LIMIT * Math.sin(Math.abs(alpha))) / Math.sin(LIMIT);
 }
 
-export function coefficients(i: AeroInput): AeroCoeffs {
+/**
+ * Full coefficients for a flight condition. `st` may be passed to reuse the
+ * angle-of-attack-only parts when evaluating the same alpha more than once.
+ */
+export function coefficients(i: AeroInput, st: StaticCoeffs = staticCoefficients(i.alpha)): AeroCoeffs {
   const alpha = wrapAngle(i.alpha);
   const k = CHORD / (2 * Math.max(i.speed, 1)); // JSBSim's ci2vel
   return {
-    cl: liftCoefficientStatic(alpha) + CL_DE * i.de + k * (CL_ADOT * i.alphaDot + CL_Q * i.q),
-    cd: dragCoefficientStatic(alpha) + CD_DE * Math.abs(i.de) + idlePropellerDragCoefficient(i.throttle ?? 1),
+    cl: st.cl + CL_DE * i.de + k * (CL_ADOT * i.alphaDot + CL_Q * i.q),
+    cd: st.cd + CD_DE * Math.abs(i.de) + idlePropellerDragCoefficient(i.throttle ?? 1),
     cm: CM0 + CM_ALPHA * stabilityAlpha(alpha) + k * (CM_Q * i.q + CM_ADOT * i.alphaDot) + CM_DE * i.de * i.tailQRatio,
   };
 }

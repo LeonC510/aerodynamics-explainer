@@ -22,8 +22,14 @@ export const PLAYBACK_SPEEDS = [1, 2, 4, 8] as const;
 // --- Forecast ---
 /** Longest forecast, simulated s; used when flight never settles. */
 export const FORECAST_MAX_S = 600;
-/** Spacing of forecast samples, s. */
-export const FORECAST_SAMPLE_S = 0.25;
+/**
+ * Time step used by the forecast, s. Coarser than DT so a forecast can be recomputed while
+ * a slider is being dragged; fourth-order integration gives the same path to within a
+ * fraction of a foot (checked by a test against the live simulation).
+ */
+export const FORECAST_DT = 1 / 30;
+/** Spacing of forecast samples, s. A whole multiple of FORECAST_DT. */
+export const FORECAST_SAMPLE_S = 0.2;
 /** Flight counts as stabilised when it has varied less than the limits below for this long, s. */
 export const STABLE_WINDOW_S = 10;
 /** Largest airspeed variation (max − min) within the window, kt. */

@@ -6,7 +6,7 @@
  * state, then applies Newton's second law. Everything the simulator shows comes
  * from integrating what this function returns.
  */
-import { coefficients, wrapAngle } from './aero';
+import { coefficients, staticCoefficients, wrapAngle } from './aero';
 import {
   AERO_REF_IN, CHORD, ELEVATOR_MAX_RAD, ELEVATOR_MIN_RAD, G, MASS, PROP_IN, WING_AREA,
 } from './aircraft';
@@ -104,12 +104,13 @@ export function derivatives(s: State, c: Controls, set: Settings): { d: Derivs; 
   }
 
   // 4. First pass without the alpha-rate terms, to estimate how fast the flight path is turning.
-  const first = coefficients({ alpha, alphaDot: 0, q: s.q, de: c.elevatorRad, speed, tailQRatio, throttle: c.throttle });
+  const st = staticCoefficients(alpha);
+  const first = coefficients({ alpha, alphaDot: 0, q: s.q, de: c.elevatorRad, speed, tailQRatio, throttle: c.throttle }, st);
   const gammaDot = (qS * first.cl + T * Math.sin(alpha) - W * Math.cos(gamma)) / (m * Math.max(speed, 1));
   const alphaDot = s.q - gammaDot;
 
   // 5. Final coefficients, lift and drag.
-  const co = coefficients({ alpha, alphaDot, q: s.q, de: c.elevatorRad, speed, tailQRatio, throttle: c.throttle });
+  const co = coefficients({ alpha, alphaDot, q: s.q, de: c.elevatorRad, speed, tailQRatio, throttle: c.throttle }, st);
   const lift = qS * co.cl; // perpendicular to the direction of travel
   const drag = qS * co.cd; // opposite the direction of travel
 
