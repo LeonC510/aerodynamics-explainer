@@ -13,7 +13,7 @@ import { Scroller } from './scroller';
 import { FONT, FONT_BOLD, theme } from './theme';
 
 /** Space around the plot, px. The right side holds the close-up panel and readouts. */
-const PAD = { left: 58, right: CLOSEUP_SIZE_PX.w + 28, top: 16, bottom: 30 };
+const PAD = { left: 58, right: CLOSEUP_SIZE_PX.w + 24 + AIRCRAFT_ICON_PX / 2 + 10, top: 16, bottom: 30 };
 /** Gap between the altitude axis and the start of the flight, so the aircraft icon clears the labels, px. */
 const LEAD_IN = 30;
 /** Height reserved under a broken axis for the ground line, px. */
@@ -215,7 +215,7 @@ export function mountTrajectory(host: HTMLElement, sim: Simulation, ui: UiState)
     // --- Right column: close-up at true angles, and the current readings. ---
     const cx = W - CLOSEUP_SIZE_PX.w - 12;
     ctx.fillStyle = th.bg;
-    ctx.fillRect(plotRight + AIRCRAFT_ICON_PX / 2 + 2, 0, W, H);
+    ctx.fillRect(cx - 6, 0, W, H);
     drawCloseup(ctx, { x: cx, y: 12, w: CLOSEUP_SIZE_PX.w, h: CLOSEUP_SIZE_PX.h }, now);
     const rows: [string, string][] = [
       ['Airspeed', `${now.iasKt.toFixed(1)} kt`],
@@ -225,16 +225,16 @@ export function mountTrajectory(host: HTMLElement, sim: Simulation, ui: UiState)
     ];
     ctx.textBaseline = 'top';
     rows.forEach(([label, value], i) => {
-      const y = 12 + CLOSEUP_SIZE_PX.h + 14 + i * 20;
+      const y = 12 + CLOSEUP_SIZE_PX.h + 12 + i * 19;
       if (y > H - 16) return;
       ctx.font = FONT;
       ctx.fillStyle = th.muted;
       ctx.textAlign = 'left';
-      ctx.fillText(label, cx + 4, y);
+      ctx.fillText(label, cx + 2, y);
       ctx.font = FONT_BOLD;
       ctx.fillStyle = th.ink;
       ctx.textAlign = 'right';
-      ctx.fillText(value, W - 16, y);
+      ctx.fillText(value, W - 14, y);
     });
   }
 

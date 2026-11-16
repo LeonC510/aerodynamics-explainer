@@ -2,7 +2,7 @@
 import { STALL_ALPHA_RAD } from '../physics/aircraft';
 import type { Sample } from '../sim/simulation';
 import { degToRad } from '../units';
-import { FONT, FONT_BOLD, theme } from './theme';
+import { FONT_BOLD_SMALL, FONT_SMALL, theme } from './theme';
 
 /**
  * Draws a high-wing aircraft seen from its left side, centred on (cx, cy), `length` px
@@ -74,12 +74,12 @@ export function drawCloseup(ctx: CanvasRenderingContext2D, rect: { x: number; y:
   ctx.stroke();
   ctx.clip();
 
-  const cx = x + w * 0.4;
-  const cy = y + h * 0.5;
+  const cx = x + w * 0.38;
+  const cy = y + h * 0.52;
   const pitch = degToRad(s.thetaDeg);
   const path = degToRad(s.gammaDeg);
   const stalled = degToRad(s.alphaDeg) > STALL_ALPHA_RAD;
-  const reach = w * 0.52;
+  const reach = w * 0.54;
 
   // Horizon.
   ctx.strokeStyle = th.muted;
@@ -119,24 +119,28 @@ export function drawCloseup(ctx: CanvasRenderingContext2D, rect: { x: number; y:
 
   // Angle of attack: the arc between direction of travel and nose line.
   ctx.strokeStyle = stalled ? th.warn : th.accent;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.arc(cx, cy, reach * 0.78, -Math.max(pitch, path), -Math.min(pitch, path));
+  ctx.arc(cx, cy, reach * 0.8, -Math.max(pitch, path), -Math.min(pitch, path));
   ctx.stroke();
 
   // Labels.
-  ctx.font = FONT_BOLD;
+  ctx.font = FONT_BOLD_SMALL;
   ctx.fillStyle = stalled ? th.warn : th.ink;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText(`Angle of attack ${s.alphaDeg.toFixed(1)}°${stalled ? '  STALL' : ''}`, x + 10, y + 8);
-  ctx.font = FONT;
+  ctx.fillText(`Angle of attack ${s.alphaDeg.toFixed(1)}°`, x + 8, y + 7);
+  if (stalled) {
+    ctx.font = FONT_SMALL;
+    ctx.fillText('stalled', x + 8, y + 21);
+  }
+  ctx.font = FONT_SMALL;
   ctx.textBaseline = 'bottom';
   ctx.fillStyle = th.ink;
-  ctx.fillText(`Nose ${signed(s.thetaDeg)}°`, x + 10, y + h - 8);
+  ctx.fillText(`Nose ${signed(s.thetaDeg)}°`, x + 8, y + h - 6);
   ctx.fillStyle = th.accent;
   ctx.textAlign = 'right';
-  ctx.fillText(`Travel ${signed(s.gammaDeg)}°`, x + w - 10, y + h - 8);
+  ctx.fillText(`Travel ${signed(s.gammaDeg)}°`, x + w - 8, y + h - 6);
   ctx.restore();
 }
 

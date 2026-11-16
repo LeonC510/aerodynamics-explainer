@@ -27,3 +27,5 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 
 export const FONT = '11px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 export const FONT_BOLD = '600 12px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+export const FONT_SMALL = '10px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+export const FONT_BOLD_SMALL = '600 11px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';

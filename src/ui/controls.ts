@@ -1,4 +1,4 @@
-/** The left control panel: yoke, throttle, run controls, and view toggles. */
+/** The left control panel: pitch, throttle, run controls, and view toggles. */
 import { DEFAULT_GRAPHS, GRAPHS, type GraphId } from '../config/graphs';
 import { PLAYBACK_SPEEDS } from '../config/simulation';
 import { elevatorToYoke, yokeToElevator, type Settings } from '../physics/dynamics';
@@ -13,6 +13,12 @@ export interface UiState {
   graphs: Set<GraphId>;
 }
 
+const ICON = {
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5h4.5v15H6zM13.5 4.5H18v15h-4.5z" fill="currentColor"/></svg>',
+  reset: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.3-5.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M4.5 3.5v5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+} as const;
+
 const SETTINGS: readonly { key: keyof Settings; label: string; hint: string }[] = [
   { key: 'altitudeEffects', label: 'Altitude affects air density and power', hint: 'Off: sea-level air at every altitude.' },
   { key: 'thrustFallsWithSpeed', label: 'Thrust falls with airspeed (fixed-pitch propeller)', hint: 'Off: idealised thrust, the same at any speed.' },
@@ -24,9 +30,9 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
     <h1>Pitch for speed,<br>power for glide</h1>
 
     <div class="group">
-      <h2>Yoke</h2>
+      <h2>Pitch</h2>
       <div class="yoke">
-        <input id="yoke" type="range" min="-1" max="1" step="0.002" aria-label="Yoke position" />
+        <input id="yoke" type="range" min="-1" max="1" step="0.002" aria-label="Pitch control" />
         <div class="ends">
           <span><strong>Push forward</strong>nose down</span>
           <span class="readout" id="yoke-readout"></span>
@@ -43,8 +49,8 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
 
     <div class="group">
       <div class="row">
-        <button id="run" class="primary" type="button">Start</button>
-        <button id="reset" type="button">Reset</button>
+        <button id="run" class="primary icon" type="button"></button>
+        <button id="reset" class="icon" type="button" aria-label="Reset" title="Reset">${ICON.reset}</button>
       </div>
       <div class="status" id="status" role="status"></div>
       <div class="row">
@@ -57,7 +63,7 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
 
     <div class="group">
       <h2>Trajectory</h2>
-      <label class="check"><input id="forecast" type="checkbox" /><span>Show forecast<small>Where the current yoke and throttle lead.</small></span></label>
+      <label class="check"><input id="forecast" type="checkbox" /><span>Show forecast<small>Where the current pitch and throttle settings lead.</small></span></label>
     </div>
 
     <div class="group">
@@ -149,13 +155,28 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
     });
 
     const onGround = sim.status === 'ground';
-    const runText = sim.status === 'running' ? 'Pause' : sim.time > 0 ? 'Resume' : 'Start';
-    if (run.textContent !== runText) run.textContent = runText;
+    const runLabel = sim.status === 'running' ? 'Pause' : sim.time > 0 ? 'Resume' : 'Start';
+    if (run.getAttribute('aria-label') !== runLabel) {
+      run.setAttribute('aria-label', runLabel);
+      run.title = runLabel;
+      run.innerHTML = sim.status === 'running' ? ICON.pause : ICON.play;
+    }
     run.disabled = onGround;
     yoke.disabled = onGround;
     throttle.disabled = onGround;
-    const statusText = onGround ? 'Ground contact. Press Reset.' : '';
+
+    let statusText = '';
+    if (onGround) statusText = 'Ground contact. Press Reset.';
+    else if (sim.memoryNotice !== 'none') {
+      const mb = sim.estimatedMemoryBytes / (1024 * 1024);
+      const size = mb >= 1000 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
+      statusText =
+        sim.memoryNotice === 'reset-advised'
+          ? `Paused: this flight's history now uses about ${size} of memory. Reset to clear it.`
+          : `Paused: this flight's history now uses about ${size} of memory. Resume to continue, or Reset to clear it.`;
+    }
     if (status.textContent !== statusText) status.textContent = statusText;
+    reset.classList.toggle('attention', onGround || sim.memoryNotice === 'reset-advised');
   }
 
   sync();

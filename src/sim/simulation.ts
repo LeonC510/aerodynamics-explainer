@@ -1,6 +1,7 @@
 /** Runs the physics in time: stepping, history, control-change markers, ground contact. */
 import {
-  DT, MARKER_MERGE_S, MAX_SIM_SECONDS_PER_ADVANCE, PLAYBACK_SPEEDS, SAMPLE_EVERY, START_ALTITUDE_FT, START_SPEED_KT,
+  DT, HISTORY_BYTES_PER_SAMPLE, MARKER_MERGE_S, MAX_SIM_SECONDS_PER_ADVANCE, MEMORY_PAUSE_EVERY_BYTES,
+  MEMORY_RESET_EVERY_PAUSES, PLAYBACK_SPEEDS, SAMPLE_EVERY, START_ALTITUDE_FT, START_SPEED_KT,
 } from '../config/simulation';
 import { ELEVATOR_MAX_RAD, ELEVATOR_MIN_RAD } from '../physics/aircraft';
 import { RHO0, density } from '../physics/atmosphere';
@@ -53,10 +54,21 @@ export function makeSample(t: number, s: State, f: Forces, prev: Sample | null):
 
 export interface Marker {
   t: number;
-  kind: 'yoke' | 'throttle' | 'setting';
+  kind: 'pitch' | 'throttle' | 'setting';
 }
 
 export type Status = 'paused' | 'running' | 'ground';
+/**
+ * Set when the run has paused itself because the flight history has grown large:
+ * 'paused' at each pause threshold, 'reset-advised' at each reset threshold.
+ */
+export type MemoryNotice = 'none' | 'paused' | 'reset-advised';
+
+export interface SimulationOptions {
+  /** History growth that triggers an automatic pause, bytes. Defaults to the configured 500 MB. */
+  pauseEveryBytes?: number;
+}
+
 export type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number];
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
@@ -73,11 +85,19 @@ export class Simulation {
   private _revision = 0;
   private steps = 0;
   private accumulator = 0;
+  private _memoryNotice: MemoryNotice = 'none';
+  private memoryPauses = 0;
+  private readonly pauseEveryBytes: number;
 
-  constructor(settings: Settings = DEFAULT_SETTINGS) {
+  constructor(settings: Settings = DEFAULT_SETTINGS, options: SimulationOptions = {}) {
     this._settings = { ...settings };
+    this.pauseEveryBytes = options.pauseEveryBytes ?? MEMORY_PAUSE_EVERY_BYTES;
     this.reset();
   }
+
+  /** Approximate memory held by the flight history, bytes. */
+  get estimatedMemoryBytes(): number { return this._history.length * HISTORY_BYTES_PER_SAMPLE; }
+  get memoryNotice(): MemoryNotice { return this._memoryNotice; }
 
   get status(): Status { return this._status; }
   get time(): number { return this.steps * DT; }
@@ -91,7 +111,9 @@ export class Simulation {
   get revision(): number { return this._revision; }
 
   start(): void {
-    if (this._status === 'paused') this._status = 'running';
+    if (this._status !== 'paused') return;
+    this._status = 'running';
+    this._memoryNotice = 'none';
   }
 
   pause(): void {
@@ -111,6 +133,8 @@ export class Simulation {
     this.accumulator = 0;
     this._markers = [];
     this._history = [];
+    this._memoryNotice = 'none';
+    this.memoryPauses = 0;
     this.record();
     this._revision++;
   }
@@ -118,7 +142,7 @@ export class Simulation {
   setElevator(rad: number): void {
     if (this._status === 'ground') return;
     this._controls = { ...this._controls, elevatorRad: clamp(rad, ELEVATOR_MIN_RAD, ELEVATOR_MAX_RAD) };
-    this.changed('yoke');
+    this.changed('pitch');
   }
 
   setThrottle(x: number): void {
@@ -149,9 +173,26 @@ export class Simulation {
         this.accumulator = 0;
         return;
       }
-      if (this.steps % SAMPLE_EVERY === 0) this.record();
+      if (this.steps % SAMPLE_EVERY === 0) {
+        this.record();
+        if (this.memoryGuardTripped()) return;
+      }
     }
     if (this.accumulator < 0) this.accumulator = 0;
+  }
+
+  /**
+   * Pauses the run each time the history has grown by another pauseEveryBytes, so an
+   * unattended tab cannot grow without limit. Returns true if it paused.
+   */
+  private memoryGuardTripped(): boolean {
+    const crossed = Math.floor(this.estimatedMemoryBytes / this.pauseEveryBytes);
+    if (crossed <= this.memoryPauses) return false;
+    this.memoryPauses = crossed;
+    this._status = 'paused';
+    this.accumulator = 0;
+    this._memoryNotice = crossed % MEMORY_RESET_EVERY_PAUSES === 0 ? 'reset-advised' : 'paused';
+    return true;
   }
 
   private record(): void {

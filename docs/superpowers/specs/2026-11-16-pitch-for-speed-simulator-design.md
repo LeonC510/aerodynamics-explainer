@@ -171,6 +171,14 @@ Eight graphs against time, each independently toggleable:
 - Graphs show flown history only, not the forecast, in version 1. **[Claude's call]**
 - The time axis follows the same fit-then-scroll rule as the trajectory view. Linking the graphs' scroll position to the trajectory's is desirable but not required.
 
+## 7a. Changes after Leon tried the first build (2026-11-16)
+
+- The yoke control is labelled "Pitch" in the interface, and its graph marker is "P".
+- Start/Pause/Resume and Reset are icon buttons.
+- The close-up panel is smaller (150 × 104 px) and the aircraft icon never overlaps it.
+- Memory guard: the run pauses itself each time the flight history grows by about 500 MB, and at each 1 GB the pause asks for a reset. Memory is estimated from the number of recorded samples (about 320 bytes each), because browsers do not report their memory use reliably.
+- Calibration: propeller-mode thrust is corrected by a curve fitted to the handbook climb rate, best-climb speed and top speed; induced drag comes from an assumed span efficiency of 0.8. See `docs/validation.md`.
+
 ## 8. Verification
 
 Unit tests on the physics module, with tolerances the builder sets (around 10 percent unless noted):

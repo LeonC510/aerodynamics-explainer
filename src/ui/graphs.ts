@@ -12,7 +12,7 @@ import { FONT, FONT_BOLD, theme } from './theme';
 const PAD = { left: 58, right: 14, top: 22, bottom: 8 };
 /** Height of the time axis under the last band, px. */
 const TIME_AXIS_PX = 24;
-const MARKER_LETTER = { yoke: 'Y', throttle: 'T', setting: 'S' } as const;
+const MARKER_LETTER = { pitch: 'P', throttle: 'T', setting: 'S' } as const;
 
 function referenceLine(def: GraphDef): { value: number; label: string } | null {
   switch (def.reference) {

@@ -36,3 +36,14 @@ export const STABLE_WINDOW_S = 10;
 export const STABLE_IAS_KT = 0.5;
 /** Largest climb-rate variation (max − min) within the window, ft/min. */
 export const STABLE_CLIMB_FPM = 20;
+
+// --- Memory guard ---
+/**
+ * Approximate memory one history sample occupies, bytes. Measured in Node
+ * (1,080,001 samples used about 322 bytes each); browsers are similar.
+ */
+export const HISTORY_BYTES_PER_SAMPLE = 320;
+/** The run pauses itself each time the flight history grows by this much, bytes (500 MB). */
+export const MEMORY_PAUSE_EVERY_BYTES = 500 * 1024 * 1024;
+/** Every this-many pauses (so every 1 GB), the pause also asks for a reset. */
+export const MEMORY_RESET_EVERY_PAUSES = 2;

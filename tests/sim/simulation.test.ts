@@ -102,3 +102,47 @@ test('with altitude effects on, the start is still 100 kt indicated', () => {
   sim.advance(2);
   expect(Math.abs(sim.latest.h - 3000)).toBeLessThan(1);
 });
+
+// ---------- Memory guard ----------
+import { HISTORY_BYTES_PER_SAMPLE } from '../../src/config/simulation';
+
+test('estimated history memory grows with the number of samples', () => {
+  const sim = new Simulation();
+  expect(sim.estimatedMemoryBytes).toBe(HISTORY_BYTES_PER_SAMPLE);
+  sim.start();
+  sim.advance(1);
+  expect(sim.estimatedMemoryBytes).toBe(31 * HISTORY_BYTES_PER_SAMPLE);
+});
+test('the run pauses each time history memory crosses another pause threshold', () => {
+  const step = 60 * HISTORY_BYTES_PER_SAMPLE; // 60 samples = 2 s of flight
+  const sim = new Simulation(undefined, { pauseEveryBytes: step });
+  sim.start();
+  sim.advance(2);
+  sim.advance(2);
+  expect(sim.status).toBe('paused');
+  expect(sim.memoryNotice).toBe('paused');
+  expect(sim.history.length).toBe(60);
+  sim.advance(2);
+  expect(sim.history.length).toBe(60); // stays paused until resumed
+  sim.start();
+  expect(sim.memoryNotice).toBe('none');
+  sim.advance(1);
+  expect(sim.status).toBe('running');
+});
+test('every second threshold asks for a reset instead, and reset clears the count', () => {
+  const step = 60 * HISTORY_BYTES_PER_SAMPLE;
+  const sim = new Simulation(undefined, { pauseEveryBytes: step });
+  sim.start();
+  for (let i = 0; i < 3 && sim.status === 'running'; i++) sim.advance(2);
+  expect(sim.memoryNotice).toBe('paused');
+  sim.start();
+  for (let i = 0; i < 3 && sim.status === 'running'; i++) sim.advance(2);
+  expect(sim.history.length).toBe(120);
+  expect(sim.status).toBe('paused');
+  expect(sim.memoryNotice).toBe('reset-advised');
+  sim.reset();
+  expect(sim.memoryNotice).toBe('none');
+  sim.start();
+  sim.advance(1);
+  expect(sim.status).toBe('running');
+});

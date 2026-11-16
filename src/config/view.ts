@@ -37,6 +37,6 @@ export const MAX_POINTS_PER_PX = 2;
 /** Length of the aircraft icon on the trajectory, px (deliberately larger than life). */
 export const AIRCRAFT_ICON_PX = 46;
 /** Size of the true-angle close-up panel, px. */
-export const CLOSEUP_SIZE_PX = { w: 200, h: 136 };
+export const CLOSEUP_SIZE_PX = { w: 150, h: 104 };
 /** A scroll position within this many px of the right end counts as "following the aircraft". */
 export const PIN_TOLERANCE_PX = 2;
