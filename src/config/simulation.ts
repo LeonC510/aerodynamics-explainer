@@ -17,7 +17,7 @@ export const MAX_SIM_SECONDS_PER_ADVANCE = 2;
 /** Control changes of the same kind closer together than this merge into one graph marker, s. */
 export const MARKER_MERGE_S = 0.5;
 /** Playback speed multipliers offered in the control panel. */
-export const PLAYBACK_SPEEDS = [1, 2, 4, 8] as const;
+export const PLAYBACK_SPEEDS = [1, 2, 4, 8, 16, 32] as const;
 
 // --- Forecast ---
 /** Longest forecast, simulated s; used when flight never settles. */

@@ -146,3 +146,15 @@ test('every second threshold asks for a reset instead, and reset clears the coun
   sim.advance(1);
   expect(sim.status).toBe('running');
 });
+
+import { PLAYBACK_SPEEDS } from '../../src/config/simulation';
+
+test('playback offers 16× and 32×, and 32× covers 32 s of flight per second', () => {
+  expect([...PLAYBACK_SPEEDS]).toEqual([1, 2, 4, 8, 16, 32]);
+  const sim = new Simulation();
+  sim.playbackSpeed = 32;
+  sim.start();
+  sim.advance(1);
+  expect(sim.time).toBeCloseTo(32, 5);
+  expect(Math.abs(sim.latest.h - 3000)).toBeLessThan(1);
+});

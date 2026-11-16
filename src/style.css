@@ -101,7 +101,7 @@ button.icon { display: inline-flex; align-items: center; justify-content: center
 button.icon svg { width: 20px; height: 20px; display: block; }
 button.attention { border-color: var(--warn); color: var(--warn); box-shadow: 0 0 0 2px color-mix(in srgb, var(--warn) 25%, transparent); }
 .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.segmented label { padding: 5px 10px; cursor: pointer; font-variant-numeric: tabular-nums; border-left: 1px solid var(--line); }
+.segmented label { padding: 5px 6px; cursor: pointer; font-variant-numeric: tabular-nums; border-left: 1px solid var(--line); }
 .segmented label:first-child { border-left: 0; }
 .segmented input { position: absolute; opacity: 0; pointer-events: none; }
 .segmented label:has(input:checked) { background: var(--ink); color: var(--surface); }
