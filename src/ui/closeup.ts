@@ -121,7 +121,10 @@ export function drawCloseup(ctx: CanvasRenderingContext2D, rect: { x: number; y:
   ctx.strokeStyle = stalled ? th.warn : th.accent;
   ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.arc(cx, cy, reach * 0.8, -Math.max(pitch, path), -Math.min(pitch, path));
+  // Swept from the direction of travel through the angle of attack itself, so it is always the
+  // short way round even when the two directions straddle ±180° (inverted flight, loops).
+  const alpha = degToRad(s.alphaDeg);
+  ctx.arc(cx, cy, reach * 0.8, -path, -(path + alpha), alpha > 0);
   ctx.stroke();
 
   // Labels.

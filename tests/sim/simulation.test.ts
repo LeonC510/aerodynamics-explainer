@@ -158,3 +158,14 @@ test('playback speeds are four steps of 4×, up to 64×, and 64× covers 64 s of
   expect(sim.time).toBeCloseTo(64, 5);
   expect(Math.abs(sim.latest.h - 3000)).toBeLessThan(1);
 });
+
+test('after a loop, the recorded nose angle stays within ±180° and still equals travel angle plus angle of attack', () => {
+  const sim = new Simulation();
+  const looped = { ...sim.state, theta: sim.state.theta + 4 * Math.PI }; // two full loops later
+  const f = derivatives(looped, sim.controls, sim.settings).f;
+  const s = makeSample(0, looped, f, null);
+  expect(s.thetaDeg).toBeGreaterThan(-180);
+  expect(s.thetaDeg).toBeLessThanOrEqual(180);
+  expect(s.thetaDeg).toBeCloseTo(sim.latest.thetaDeg, 6);
+  expect(s.thetaDeg).toBeCloseTo(s.gammaDeg + s.alphaDeg, 6);
+});

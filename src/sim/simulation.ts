@@ -3,6 +3,7 @@ import {
   DT, HISTORY_BYTES_PER_SAMPLE, MARKER_MERGE_S, MAX_SIM_SECONDS_PER_ADVANCE, MEMORY_PAUSE_EVERY_BYTES,
   MEMORY_RESET_EVERY_PAUSES, PLAYBACK_SPEEDS, SAMPLE_EVERY, START_ALTITUDE_FT, START_SPEED_KT,
 } from '../config/simulation';
+import { wrapAngle } from '../physics/aero';
 import { ELEVATOR_MAX_RAD, ELEVATOR_MIN_RAD } from '../physics/aircraft';
 import { RHO0, density } from '../physics/atmosphere';
 import {
@@ -40,7 +41,8 @@ export function makeSample(t: number, s: State, f: Forces, prev: Sample | null):
     t,
     x: s.x,
     h: s.h,
-    thetaDeg: radToDeg(s.theta),
+    // The pitch angle keeps counting through loops (720° after two); record it within ±180°.
+    thetaDeg: radToDeg(wrapAngle(s.theta)),
     gammaDeg: radToDeg(f.gamma),
     alphaDeg: radToDeg(f.alpha),
     iasKt,
