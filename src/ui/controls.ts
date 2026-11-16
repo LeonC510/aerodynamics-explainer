@@ -53,12 +53,12 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
         <button id="reset" class="icon" type="button" aria-label="Reset" title="Reset">${ICON.reset}</button>
       </div>
       <div class="status" id="status" role="status"></div>
-      <div class="row">
-        <span>Speed</span>
-        <span class="segmented" role="radiogroup" aria-label="Playback speed">
-          ${PLAYBACK_SPEEDS.map((s) => `<label><input type="radio" name="speed" value="${s}" ${s === 1 ? 'checked' : ''}/>${s}×</label>`).join('')}
-        </span>
-      </div>
+    </div>
+
+    <div class="group speed">
+      <h2>Speed <span class="readout" id="speed-readout"></span></h2>
+      <input id="speed" type="range" min="0" max="${PLAYBACK_SPEEDS.length - 1}" step="1" value="0" aria-label="Playback speed" />
+      <div class="stops" aria-hidden="true">${PLAYBACK_SPEEDS.map((s) => `<span>${s}×</span>`).join('')}</div>
     </div>
 
     <div class="group">
@@ -106,13 +106,12 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
     sim.reset();
     onChange();
   });
-  const speedInputs = root.querySelectorAll<HTMLInputElement>('input[name="speed"]');
-  speedInputs.forEach((el) =>
-    el.addEventListener('change', () => {
-      sim.playbackSpeed = Number(el.value) as PlaybackSpeed;
-      onChange();
-    }),
-  );
+  const speed = $<HTMLInputElement>('#speed');
+  const speedReadout = $('#speed-readout');
+  speed.addEventListener('input', () => {
+    sim.playbackSpeed = PLAYBACK_SPEEDS[Number(speed.value)] as PlaybackSpeed;
+    onChange();
+  });
   forecast.checked = ui.forecastOn;
   forecast.addEventListener('change', () => {
     ui.forecastOn = forecast.checked;
@@ -149,10 +148,10 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
     const throttleText = `<b>${pct.toFixed(0)}%</b>`;
     if (throttleReadout.innerHTML !== throttleText) throttleReadout.innerHTML = throttleText;
 
-    speedInputs.forEach((el) => {
-      const on = Number(el.value) === sim.playbackSpeed;
-      if (el.checked !== on) el.checked = on;
-    });
+    const speedIndex = String(PLAYBACK_SPEEDS.indexOf(sim.playbackSpeed));
+    if (speed.value !== speedIndex) speed.value = speedIndex;
+    const speedText = `${sim.playbackSpeed}×`;
+    if (speedReadout.textContent !== speedText) speedReadout.textContent = speedText;
 
     const onGround = sim.status === 'ground';
     const runLabel = sim.status === 'running' ? 'Pause' : sim.time > 0 ? 'Resume' : 'Start';

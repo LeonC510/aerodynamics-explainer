@@ -20,19 +20,19 @@ test('advances in real time, scaled by playback speed, sampling 30 times a secon
   sim.advance(1);
   expect(sim.time).toBeCloseTo(1, 5);
   expect(sim.history.length).toBe(31);
-  sim.playbackSpeed = 8;
-  sim.advance(0.5);
+  sim.playbackSpeed = 4;
+  sim.advance(1);
   expect(sim.time).toBeCloseTo(5, 5);
   expect(Math.abs(sim.latest.h - 3000)).toBeLessThan(1);
 });
 test('a very long frame is capped instead of simulated in full', () => {
   const sim = new Simulation();
-  sim.playbackSpeed = 8;
+  sim.playbackSpeed = 4;
   sim.start();
   sim.advance(300);
-  expect(sim.time).toBeCloseTo(16, 5);
+  expect(sim.time).toBeCloseTo(8, 5);
   sim.advance(0.5);
-  expect(sim.time).toBeCloseTo(20, 5); // no backlog carried over
+  expect(sim.time).toBeCloseTo(10, 5); // no backlog carried over
 });
 test('pause stops time and start resumes it', () => {
   const sim = new Simulation();
@@ -71,9 +71,9 @@ test('the first sample has zero rates; later samples difference against the prev
   const b = makeSample(0.5, sim.state, { ...f, lift: f.lift + 10 }, a);
   expect(b.liftRateLbfPerS).toBeCloseTo(20);
 });
-test('a dive at 8× ends in ground contact that only reset clears; settings survive reset', () => {
+test('a fast-forwarded dive ends in ground contact that only reset clears; settings survive reset', () => {
   const dive = new Simulation();
-  dive.playbackSpeed = 8;
+  dive.playbackSpeed = 16;
   dive.start();
   dive.setElevator(ELEVATOR_MAX_RAD);
   dive.setThrottle(1);
@@ -149,12 +149,12 @@ test('every second threshold asks for a reset instead, and reset clears the coun
 
 import { PLAYBACK_SPEEDS } from '../../src/config/simulation';
 
-test('playback offers 16× and 32×, and 32× covers 32 s of flight per second', () => {
-  expect([...PLAYBACK_SPEEDS]).toEqual([1, 2, 4, 8, 16, 32]);
+test('playback speeds are four steps of 4×, up to 64×, and 64× covers 64 s of flight per second', () => {
+  expect([...PLAYBACK_SPEEDS]).toEqual([1, 4, 16, 64]);
   const sim = new Simulation();
-  sim.playbackSpeed = 32;
+  sim.playbackSpeed = 64;
   sim.start();
   sim.advance(1);
-  expect(sim.time).toBeCloseTo(32, 5);
+  expect(sim.time).toBeCloseTo(64, 5);
   expect(Math.abs(sim.latest.h - 3000)).toBeLessThan(1);
 });

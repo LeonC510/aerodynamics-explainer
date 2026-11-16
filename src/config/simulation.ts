@@ -16,8 +16,11 @@ export const START_SPEED_KT = 100;
 export const MAX_SIM_SECONDS_PER_ADVANCE = 2;
 /** Control changes of the same kind closer together than this merge into one graph marker, s. */
 export const MARKER_MERGE_S = 0.5;
-/** Playback speed multipliers offered in the control panel. */
-export const PLAYBACK_SPEEDS = [1, 2, 4, 8, 16, 32] as const;
+/**
+ * Playback speed multipliers, the stops of the speed slider. Each is 4× the one before,
+ * from real time up to 64×.
+ */
+export const PLAYBACK_SPEEDS = [1, 4, 16, 64] as const;
 
 // --- Forecast ---
 /** Longest forecast, simulated s; used when flight never settles. */

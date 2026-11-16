@@ -109,7 +109,7 @@ Leon chose the "left side panel" arrangement for a landscape window.
 - Yoke: vertical slider, down = pull back (nose up), up = push forward, ends labelled. The track has no filled side, since neither direction is "more" (Leon, 2026-11-16, after trying the first build).
 - Throttle: slider.
 - Start/Pause and Reset.
-- Playback speed: 1×, 2×, 4×, 8×, 16×, 32×.
+- Playback speed: a slider with four discrete stops, 1×, 4×, 16×, 64× (each 4× the last; Leon asked for at most five stops, a regular pattern, and a top speed of at least 32×).
 - Trajectory forecast toggle.
 - Graph toggles: one checkbox per diagnostic graph.
 - Advanced settings (collapsed by default): altitude effects; thrust falls with airspeed; power changes pitch the nose.
