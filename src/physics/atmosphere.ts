@@ -1,5 +1,8 @@
-/** Sea-level standard air density, slug/ft³. */
-export const RHO0 = 0.0023769;
+import {
+  DENSITY_EXPONENT, LAPSE_RATE_R_PER_FT, POWER_FACTOR_A, POWER_FACTOR_B, RHO0, SEA_LEVEL_TEMP_R,
+} from '../config/atmosphere';
+
+export { RHO0 };
 
 /**
  * Air density in slug/ft³. With altitude effects off the air is sea-level standard everywhere.
@@ -7,16 +10,11 @@ export const RHO0 = 0.0023769;
  */
 export function density(altitudeFt: number, altitudeEffects: boolean): number {
   if (!altitudeEffects) return RHO0;
-  const T0 = 518.67; // °R
-  const T = Math.max(T0 - 0.00356616 * Math.max(altitudeFt, 0), 1);
-  return RHO0 * Math.pow(T / T0, 4.2561);
+  const T = Math.max(SEA_LEVEL_TEMP_R - LAPSE_RATE_R_PER_FT * Math.max(altitudeFt, 0), 1);
+  return RHO0 * Math.pow(T / SEA_LEVEL_TEMP_R, DENSITY_EXPONENT);
 }
 
-/**
- * Fraction of sea-level engine power available at density rho.
- * NOT FROM SOURCE: Gagg–Ferrar relation for normally aspirated piston engines
- * (JSBSim models manifold pressure in detail instead).
- */
+/** Fraction of sea-level engine power available at density rho (Gagg–Ferrar). */
 export function powerFactor(rho: number): number {
-  return Math.max(1.132 * (rho / RHO0) - 0.132, 0);
+  return Math.max(POWER_FACTOR_A * (rho / RHO0) - POWER_FACTOR_B, 0);
 }

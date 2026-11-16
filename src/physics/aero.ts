@@ -1,6 +1,7 @@
 /** Aerodynamic coefficients of the whole aircraft as functions of the flight condition. */
 import {
   CD0, CD_ALPHA, CD_DE, CHORD, CL_ADOT, CL_ALPHA, CL_DE, CL_Q, CM0, CM_ADOT, CM_ALPHA, CM_DE, CM_Q,
+  FLAT_PLATE_CD, FLAT_PLATE_CL, POST_STALL_BLEND_RAD, STABILITY_LINEAR_LIMIT_RAD,
 } from './aircraft';
 import { interp1, type Table1D } from './table';
 
@@ -12,11 +13,9 @@ export function wrapAngle(a: number): number {
   return w;
 }
 
-// NOT FROM SOURCE: the source tables end near ±20°. Beyond them the wing is modelled
-// as a flat plate, with a linear blend over BLEND rad so the curves stay continuous.
-const BLEND = 0.15;
-const flatPlateLift = (alpha: number): number => 1.1 * Math.sin(2 * alpha);
-const flatPlateDrag = (alpha: number): number => CD0 + 2.0 * Math.sin(alpha) ** 2;
+// Beyond the source tables the wing is modelled as a flat plate (see config/aircraft.ts).
+const flatPlateLift = (alpha: number): number => FLAT_PLATE_CL * Math.sin(2 * alpha);
+const flatPlateDrag = (alpha: number): number => CD0 + FLAT_PLATE_CD * Math.sin(alpha) ** 2;
 
 function extended(table: Table1D, offset: number, flatPlate: (a: number) => number, alphaIn: number): number {
   const alpha = wrapAngle(alphaIn);
@@ -25,8 +24,8 @@ function extended(table: Table1D, offset: number, flatPlate: (a: number) => numb
   if (alpha >= lo && alpha <= hi) return offset + interp1(table, alpha);
   const beyond = alpha > hi ? alpha - hi : lo - alpha;
   const endValue = offset + (alpha > hi ? table[table.length - 1][1] : table[0][1]);
-  if (beyond >= BLEND) return flatPlate(alpha);
-  const w = beyond / BLEND;
+  if (beyond >= POST_STALL_BLEND_RAD) return flatPlate(alpha);
+  const w = beyond / POST_STALL_BLEND_RAD;
   return (1 - w) * endValue + w * flatPlate(alpha);
 }
 
@@ -63,11 +62,10 @@ export interface AeroCoeffs {
 
 /**
  * Angle used by the static-stability term. Equal to alpha in normal flight.
- * NOT FROM SOURCE: beyond ±0.5 rad it follows a sine so the restoring moment
- * stays continuous if the aircraft tumbles through ±180°.
+ * Beyond STABILITY_LINEAR_LIMIT_RAD it follows a sine (see config/aircraft.ts).
  */
 function stabilityAlpha(alpha: number): number {
-  const LIMIT = 0.5;
+  const LIMIT = STABILITY_LINEAR_LIMIT_RAD;
   if (Math.abs(alpha) <= LIMIT) return alpha;
   return (Math.sign(alpha) * LIMIT * Math.sin(Math.abs(alpha))) / Math.sin(LIMIT);
 }
