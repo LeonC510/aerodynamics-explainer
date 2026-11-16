@@ -118,32 +118,52 @@ export const IDLE_RPM = 550;
 /**
  * HANDBOOK CALIBRATION.
  * NOT FROM SOURCE: Leon's priority is to match the Cessna 172P handbook. The unmodified
- * JSBSim drag table and lift peak give a climb rate about 120 ft/min low and a stall speed
- * about 3.5 kt high, so these values are fitted (scripts/calibrate.ts) to the handbook
- * figures in HANDBOOK below. Geometry, mass, the lift curve in cruise, and all
+ * JSBSim data gives a best climb of 577 ft/min at 92 kt and a stall speed of 54.5 kt, so
+ * these values are fitted (scripts/calibrate.ts) to the handbook figures in HANDBOOK below. Geometry, mass, the lift curve in cruise, and all
  * stability coefficients remain the source's.
  */
 export const CALIBRATION = {
-  /** Zero-lift drag coefficient of the airframe. Target: maximum level speed. */
-  cd0: 0.03,
-  /** Induced-drag factor: CD = cd0 + kInduced·CL² below the stall. Target: best climb rate and speed. */
-  kInduced: 0.0508,
+  /** Zero-lift drag coefficient of the airframe. Target: maximum level speed (with the source propeller table). */
+  cd0: 0.0294,
+  /**
+   * Induced-drag factor: CD = cd0 + kInduced·CL² below the stall. Not fitted: set from an
+   * assumed span efficiency (SPAN_EFFICIENCY below), kInduced = 1 / (π · aspect ratio · e).
+   */
+  kInduced: 0.054,
   /** Multiplier on the lift table at the stall angle, fading to 1 at CL_SCALE_START_RAD. Target: stall speed. */
   clMaxScale: 1.1359,
-  /** Multiplier on fixed-pitch propeller thrust. Target: best climb rate and maximum level speed. */
-  propThrustScale: 1.0128,
+  /**
+   * Fixed-pitch propeller thrust correction. The source's generic propeller table gives almost
+   * flat thrust from 70 to 95 kt, where a real fixed-pitch propeller's thrust is already falling;
+   * that alone puts the best-climb speed near 85 kt instead of the handbook's 76. The table's
+   * thrust is multiplied by a smooth curve (a parabola in airspeed) defined by three things:
+   *   - propThrustAtVy: its value at the handbook best-climb speed. Target: best climb rate.
+   *   - propThrustSlopePerKt: its slope there, per knot. Target: best-climb speed.
+   *   - it equals 1 at the handbook maximum level speed (the source table is trusted there).
+   * Below PROP_CORRECTION_MIN_KT and above the maximum level speed the curve is held constant.
+   */
+  propThrustAtVy: 1.0709,
+  propThrustSlopePerKt: -0.0105,
   /** Extra drag coefficient of a windmilling propeller at idle. Target: power-off glide ratio in constant-thrust mode. */
-  idlePropDragCd: 0.0219,
+  idlePropDragCd: 0.0203,
   /**
    * Full-throttle thrust in constant-thrust mode, lbf. Target: the best climb rate at
    * full throttle equals the handbook's.
    */
-  maxThrustLbf: 393,
+  maxThrustLbf: 394.2,
 };
 /** Angle of attack above which clMaxScale starts to apply (end of the lift table's straight part). */
 export const CL_SCALE_START_RAD = 0.09;
 /** Calibrated drag blends back to the source table over this range just below the stall angle. */
 export const DRAG_BLEND_BELOW_STALL_RAD = 0.05;
+/**
+ * NOT FROM SOURCE: assumed span efficiency of the wing, a typical value for a strut-braced
+ * rectangular-ish wing. Sets CALIBRATION.kInduced. Wing span is 35.8 ft (c172p.xml <wingspan>).
+ */
+export const SPAN_EFFICIENCY = 0.8;
+export const WING_SPAN = 35.8; // c172p.xml <metrics><wingspan> ft
+/** The propeller thrust correction is held constant below this airspeed, kt. */
+export const PROP_CORRECTION_MIN_KT = 60;
 /** Windmilling-propeller drag fades linearly to zero by this throttle setting. */
 export const IDLE_DRAG_FADE_THROTTLE = 0.1;
 

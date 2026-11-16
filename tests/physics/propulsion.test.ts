@@ -1,7 +1,8 @@
 import { expect, test } from 'vitest';
-import { CALIBRATION } from '../../src/physics/aircraft';
+import { CALIBRATION, HANDBOOK, PROP_CORRECTION_MIN_KT } from '../../src/physics/aircraft';
 import { RHO0, density } from '../../src/physics/atmosphere';
-import { thrust } from '../../src/physics/propulsion';
+import { propellerCorrection, thrust } from '../../src/physics/propulsion';
+import { ktToFps } from '../../src/units';
 
 const R = RHO0;
 test('constant-thrust mode: thrust is throttle times maximum, at any speed', () => {
@@ -21,7 +22,7 @@ test('propeller mode: static full-throttle rpm and thrust are plausible for a fi
   expect(s.rpm!).toBeGreaterThan(2000);
   expect(s.rpm!).toBeLessThan(2400);
   expect(s.thrustLbf).toBeGreaterThan(300);
-  expect(s.thrustLbf).toBeLessThan(400);
+  expect(s.thrustLbf).toBeLessThan(480);
   expect(s.inducedVelocityFps).toBeGreaterThan(0);
 });
 test('propeller mode: thrust falls with airspeed and rpm never exceeds the limit', () => {
@@ -32,4 +33,13 @@ test('propeller mode: an idling propeller does not push, and induces no slipstre
   const idle = thrust(0, 170, R, true);
   expect(idle.thrustLbf).toBeLessThanOrEqual(0);
   expect(idle.inducedVelocityFps).toBe(0);
+});
+
+test('the handbook propeller correction is 1 at the handbook top speed and constant outside its range', () => {
+  expect(propellerCorrection(ktToFps(HANDBOOK.maxLevelKt))).toBeCloseTo(1, 9);
+  expect(propellerCorrection(ktToFps(HANDBOOK.bestClimbKias))).toBeCloseTo(CALIBRATION.propThrustAtVy, 9);
+  expect(propellerCorrection(ktToFps(160))).toBeCloseTo(1, 9);
+  expect(propellerCorrection(0)).toBeCloseTo(propellerCorrection(ktToFps(PROP_CORRECTION_MIN_KT)), 9);
+  // Thrust falls faster with speed than the source table alone: the correction decreases.
+  expect(propellerCorrection(ktToFps(90))).toBeLessThan(propellerCorrection(ktToFps(70)));
 });

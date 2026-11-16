@@ -1,5 +1,8 @@
 /** Thrust from the engine and propeller, for both thrust modes. */
-import { CALIBRATION, CP_J, CT_J, IDLE_RPM, MAX_HP, MAX_RPM, PROP_DIAMETER_FT } from './aircraft';
+import {
+  CALIBRATION, CP_J, CT_J, HANDBOOK, IDLE_RPM, MAX_HP, MAX_RPM, PROP_CORRECTION_MIN_KT, PROP_DIAMETER_FT,
+} from './aircraft';
+import { fpsToKt } from '../units';
 import { powerFactor } from './atmosphere';
 import { interp1 } from './table';
 
@@ -47,6 +50,20 @@ function balancedRevsPerSecond(throttle: number, speed: number, rho: number): nu
 }
 
 /**
+ * Handbook calibration of the propeller: a parabola in airspeed with a given value and slope
+ * at the handbook best-climb speed, equal to 1 at the handbook maximum level speed.
+ * See CALIBRATION in config/aircraft.ts.
+ */
+export function propellerCorrection(speedFps: number): number {
+  const vy = HANDBOOK.bestClimbKias;
+  const span = HANDBOOK.maxLevelKt - vy;
+  const { propThrustAtVy: m, propThrustSlopePerKt: b } = CALIBRATION;
+  const curvature = (1 - m - b * span) / (span * span);
+  const d = Math.min(Math.max(fpsToKt(speedFps), PROP_CORRECTION_MIN_KT), HANDBOOK.maxLevelKt) - vy;
+  return m + b * d + curvature * d * d;
+}
+
+/**
  * @param throttle 0..1 (clamped)
  * @param axialSpeedFps airspeed along the nose axis, ft/s
  * @param rho air density, slug/ft³
@@ -68,6 +85,7 @@ export function thrust(
 
   const D = PROP_DIAMETER_FT;
   const n = thr === 0 ? IDLE_RPM / 60 : balancedRevsPerSecond(thr, speed, rho);
-  const thrustLbf = CALIBRATION.propThrustScale * interp1(CT_J, speed / (n * D)) * rho * n * n * D ** 4;
+  const tableThrust = interp1(CT_J, speed / (n * D)) * rho * n * n * D ** 4;
+  const thrustLbf = tableThrust > 0 ? propellerCorrection(speed) * tableThrust : tableThrust;
   return { thrustLbf, rpm: n * 60, inducedVelocityFps: inducedVelocity(thrustLbf, speed, rho) };
 }

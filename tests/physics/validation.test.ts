@@ -87,12 +87,11 @@ const within = (value: number, target: number, fraction: number) =>
 test('stall speed is within 5% of the handbook', () => {
   within(stallSpeedKt(DEFAULT_SETTINGS), HANDBOOK.stallKcas, 0.05);
 });
-test('fixed-pitch mode: best climb rate and maximum level speed are within 5% of the handbook', () => {
+test('fixed-pitch mode: best climb rate, its speed, and maximum level speed match the handbook', () => {
   const c = bestClimb(PROP);
-  within(c.fpm, HANDBOOK.bestClimbFpm, 0.05);
-  // Known residual: the model's best-climb speed is higher than the handbook's 76 kt.
-  expect(Math.abs(c.kt - HANDBOOK.bestClimbKias)).toBeLessThan(10);
-  within(maxLevelSpeedKt(PROP), HANDBOOK.maxLevelKt, 0.05);
+  within(c.fpm, HANDBOOK.bestClimbFpm, 0.03);
+  expect(Math.abs(c.kt - HANDBOOK.bestClimbKias)).toBeLessThan(3);
+  within(maxLevelSpeedKt(PROP), HANDBOOK.maxLevelKt, 0.02);
 });
 test('constant-thrust mode: best climb rate is within 5% of the handbook', () => {
   within(bestClimb(DEFAULT_SETTINGS).fpm, HANDBOOK.bestClimbFpm, 0.05);
@@ -101,8 +100,7 @@ test('power-off glide ratio is within 10% of the handbook in both thrust modes',
   for (const set of [DEFAULT_SETTINGS, PROP]) {
     const g = bestGlide(set);
     within(g.ratio, HANDBOOK.glideRatio, 0.1);
-    // Known residual: best-glide speed is not forced to the handbook's 65 kt.
-    expect(g.kt).toBeGreaterThan(55);
-    expect(g.kt).toBeLessThan(90);
+    // Known residual: best-glide speed sits about 5 kt above the handbook's 65 kt (see docs/validation.md).
+    expect(Math.abs(g.kt - HANDBOOK.bestGlideKias)).toBeLessThan(7);
   }
 });
