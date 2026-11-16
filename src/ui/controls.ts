@@ -28,9 +28,9 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
       <div class="yoke">
         <input id="yoke" type="range" min="-1" max="1" step="0.002" aria-label="Yoke position" />
         <div class="ends">
-          <span><strong>Pull back</strong>nose up</span>
-          <span class="readout" id="yoke-readout"></span>
           <span><strong>Push forward</strong>nose down</span>
+          <span class="readout" id="yoke-readout"></span>
+          <span><strong>Pull back</strong>nose up</span>
         </div>
       </div>
     </div>
@@ -100,7 +100,8 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
     sim.reset();
     onChange();
   });
-  root.querySelectorAll<HTMLInputElement>('input[name="speed"]').forEach((el) =>
+  const speedInputs = root.querySelectorAll<HTMLInputElement>('input[name="speed"]');
+  speedInputs.forEach((el) =>
     el.addEventListener('change', () => {
       sim.playbackSpeed = Number(el.value) as PlaybackSpeed;
       onChange();
@@ -141,6 +142,11 @@ export function mountControls(root: HTMLElement, sim: Simulation, ui: UiState, o
     if (Math.abs(Number(throttle.value) - pct) > 0.26) throttle.value = String(pct);
     const throttleText = `<b>${pct.toFixed(0)}%</b>`;
     if (throttleReadout.innerHTML !== throttleText) throttleReadout.innerHTML = throttleText;
+
+    speedInputs.forEach((el) => {
+      const on = Number(el.value) === sim.playbackSpeed;
+      if (el.checked !== on) el.checked = on;
+    });
 
     const onGround = sim.status === 'ground';
     const runText = sim.status === 'running' ? 'Pause' : sim.time > 0 ? 'Resume' : 'Start';

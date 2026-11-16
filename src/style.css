@@ -61,9 +61,29 @@ body {
 .group { display: flex; flex-direction: column; }
 .yoke { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; align-items: stretch; }
 .yoke input[type="range"] {
-  writing-mode: vertical-lr; direction: rtl; /* top = pull back */
-  width: 28px; height: 190px; margin: 0 auto; accent-color: var(--accent);
+  /* Vertical, minimum at the top: pushing forward is up, pulling back is down. */
+  writing-mode: vertical-lr; direction: ltr;
+  appearance: none; -webkit-appearance: none;
+  width: 28px; height: 190px; margin: 0 auto; background: transparent; cursor: pointer;
 }
+/* A plain track with no filled side: neither direction is "more". */
+.yoke input[type="range"]::-webkit-slider-runnable-track {
+  width: 6px; height: 100%; border-radius: 3px; background: var(--line);
+}
+.yoke input[type="range"]::-moz-range-track {
+  width: 6px; height: 100%; border-radius: 3px; background: var(--line);
+}
+.yoke input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%; margin-left: -7px;
+  background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--accent);
+}
+.yoke input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--accent);
+}
+.yoke input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.yoke input[type="range"]:disabled { opacity: 0.45; cursor: default; }
 .yoke .ends { display: flex; flex-direction: column; justify-content: space-between; font-size: 12px; color: var(--muted); }
 .yoke .ends strong { color: var(--ink); font-weight: 600; display: block; }
 .readout { font-variant-numeric: tabular-nums; font-size: 13px; }
@@ -92,9 +112,12 @@ details[open] summary { margin-bottom: 8px; }
 .status { color: var(--warn); font-weight: 600; min-height: 1.4em; }
 
 /* ---------- Views ---------- */
-#views { display: grid; grid-template-rows: minmax(220px, 44vh) minmax(0, 1fr); min-width: 0; height: 100vh; }
-#trajectory { border-bottom: 1px solid var(--line); min-height: 0; }
-#graphs { min-height: 0; }
+#views {
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(220px, 44vh) minmax(0, 1fr);
+  min-width: 0; height: 100vh; overflow: hidden;
+}
+#trajectory { border-bottom: 1px solid var(--line); min-height: 0; min-width: 0; overflow: hidden; }
+#graphs { min-height: 0; min-width: 0; overflow: hidden; }
 .scroller { position: relative; width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; }
 #graphs .scroller { overflow-y: auto; }
 .scroller .spacer { position: relative; min-width: 100%; min-height: 100%; }

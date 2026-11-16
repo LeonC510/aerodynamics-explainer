@@ -106,7 +106,7 @@ Fixed time step (around 1/120 s) with fourth-order Runge-Kutta, decoupled from t
 Leon chose the "left side panel" arrangement for a landscape window.
 
 **Left panel, top to bottom**
-- Yoke: vertical slider, up = pull back (nose up), ends labelled.
+- Yoke: vertical slider, down = pull back (nose up), up = push forward, ends labelled. The track has no filled side, since neither direction is "more" (Leon, 2026-11-16, after trying the first build).
 - Throttle: slider.
 - Start/Pause and Reset.
 - Playback speed: 1×, 2×, 4×, 8×.
@@ -127,7 +127,7 @@ Altitude against horizontal distance.
 **Contents**
 - The flown path as a solid line.
 - An oversized aircraft icon on the line at the current position, rotated by the true pitch angle. Leon wants to try this first and revise if it reads badly. Known risk: because height is stretched (below), the path's drawn slope is steeper than the icon's true angle.
-- A close-up inset drawn at true angles: aircraft side view, horizon reference, velocity direction, and the angle of attack between nose and velocity, with its value. **[Claude's call to keep this alongside the icon; easy to remove]**
+- A close-up panel, in its own column to the right of the plot with the current airspeed, altitude, climb rate and time under it, drawn at true angles: aircraft side view, horizon reference, velocity direction, and the angle of attack between nose and velocity, with its value. **[Claude's call to keep this alongside the icon; easy to remove]**
 
 **Forecast (toggle)**
 - Off: the aircraft sits at the right edge with the flown path behind it.
