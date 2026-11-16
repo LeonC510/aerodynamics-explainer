@@ -1,6 +1,7 @@
 /** Aerodynamic coefficients of the whole aircraft as functions of the flight condition. */
 import {
-  CD0, CD_ALPHA, CD_DE, CHORD, CL_ADOT, CL_ALPHA, CL_DE, CL_Q, CM0, CM_ADOT, CM_ALPHA, CM_DE, CM_Q,
+  CALIBRATION, CD0, CD_ALPHA, CD_DE, CL_SCALE_START_RAD, DRAG_BLEND_BELOW_STALL_RAD,
+  IDLE_DRAG_FADE_THROTTLE, STALL_ALPHA_RAD, CHORD, CL_ADOT, CL_ALPHA, CL_DE, CL_Q, CM0, CM_ADOT, CM_ALPHA, CM_DE, CM_Q,
   FLAT_PLATE_CD, FLAT_PLATE_CL, POST_STALL_BLEND_RAD, STABILITY_LINEAR_LIMIT_RAD,
 } from './aircraft';
 import { interp1, type Table1D } from './table';
@@ -29,14 +30,50 @@ function extended(table: Table1D, offset: number, flatPlate: (a: number) => numb
   return (1 - w) * endValue + w * flatPlate(alpha);
 }
 
-/** Lift coefficient from angle of attack alone (rad). */
-export function liftCoefficientStatic(alpha: number): number {
-  return extended(CL_ALPHA, 0, flatPlateLift, alpha);
+/**
+ * Handbook calibration of the lift peak: 1 in cruise, rising linearly to
+ * CALIBRATION.clMaxScale at the stall angle and staying there beyond it.
+ */
+function liftScale(alpha: number): number {
+  const t = (alpha - CL_SCALE_START_RAD) / (STALL_ALPHA_RAD - CL_SCALE_START_RAD);
+  return 1 + (CALIBRATION.clMaxScale - 1) * Math.min(Math.max(t, 0), 1);
 }
 
-/** Drag coefficient from angle of attack alone (rad): zero-lift drag plus drag due to alpha. */
-export function dragCoefficientStatic(alpha: number): number {
-  return extended(CD_ALPHA, CD0, flatPlateDrag, alpha);
+/** Lift coefficient from angle of attack alone (rad). */
+export function liftCoefficientStatic(alphaIn: number): number {
+  const alpha = wrapAngle(alphaIn);
+  const hi = CL_ALPHA[CL_ALPHA.length - 1][0];
+  const scale = alpha <= hi + POST_STALL_BLEND_RAD ? liftScale(Math.min(alpha, hi)) : 1;
+  // Past the blend region the flat-plate model applies unscaled; inside it, scale the table part.
+  if (alpha > hi && alpha < hi + POST_STALL_BLEND_RAD) {
+    const w = (alpha - hi) / POST_STALL_BLEND_RAD;
+    return (1 - w) * CL_ALPHA[CL_ALPHA.length - 1][1] * scale + w * flatPlateLift(alpha);
+  }
+  return extended(CL_ALPHA, 0, flatPlateLift, alpha) * scale;
+}
+
+/**
+ * Drag coefficient from angle of attack alone (rad).
+ * Below the stall: the handbook-calibrated polar CD = cd0 + kInduced·CL².
+ * Around and beyond the stall: the source table, then the flat-plate extension.
+ */
+export function dragCoefficientStatic(alphaIn: number): number {
+  const alpha = wrapAngle(alphaIn);
+  const source = extended(CD_ALPHA, CD0, flatPlateDrag, alpha);
+  const lo = CD_ALPHA[0][0];
+  if (alpha < lo || alpha >= STALL_ALPHA_RAD) return source;
+  const cl = liftCoefficientStatic(alpha);
+  const polar = CALIBRATION.cd0 + CALIBRATION.kInduced * cl * cl;
+  const blendStart = STALL_ALPHA_RAD - DRAG_BLEND_BELOW_STALL_RAD;
+  if (alpha <= blendStart) return polar;
+  const w = (alpha - blendStart) / DRAG_BLEND_BELOW_STALL_RAD;
+  return (1 - w) * polar + w * source;
+}
+
+/** Extra drag coefficient from a windmilling propeller: full at idle, zero by 10% throttle. */
+export function idlePropellerDragCoefficient(throttle: number): number {
+  const t = Math.min(Math.max(throttle, 0), 1);
+  return CALIBRATION.idlePropDragCd * Math.max(0, 1 - t / IDLE_DRAG_FADE_THROTTLE);
 }
 
 export interface AeroInput {
@@ -52,6 +89,8 @@ export interface AeroInput {
   speed: number;
   /** Dynamic pressure at the tail divided by free-stream dynamic pressure. */
   tailQRatio: number;
+  /** 0..1; adds windmilling-propeller drag near idle. Omitted: no idle drag. */
+  throttle?: number;
 }
 
 export interface AeroCoeffs {
@@ -75,7 +114,7 @@ export function coefficients(i: AeroInput): AeroCoeffs {
   const k = CHORD / (2 * Math.max(i.speed, 1)); // JSBSim's ci2vel
   return {
     cl: liftCoefficientStatic(alpha) + CL_DE * i.de + k * (CL_ADOT * i.alphaDot + CL_Q * i.q),
-    cd: dragCoefficientStatic(alpha) + CD_DE * Math.abs(i.de),
+    cd: dragCoefficientStatic(alpha) + CD_DE * Math.abs(i.de) + idlePropellerDragCoefficient(i.throttle ?? 1),
     cm: CM0 + CM_ALPHA * stabilityAlpha(alpha) + k * (CM_Q * i.q + CM_ADOT * i.alphaDot) + CM_DE * i.de * i.tailQRatio,
   };
 }

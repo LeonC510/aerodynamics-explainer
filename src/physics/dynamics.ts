@@ -104,12 +104,12 @@ export function derivatives(s: State, c: Controls, set: Settings): { d: Derivs; 
   }
 
   // 4. First pass without the alpha-rate terms, to estimate how fast the flight path is turning.
-  const first = coefficients({ alpha, alphaDot: 0, q: s.q, de: c.elevatorRad, speed, tailQRatio });
+  const first = coefficients({ alpha, alphaDot: 0, q: s.q, de: c.elevatorRad, speed, tailQRatio, throttle: c.throttle });
   const gammaDot = (qS * first.cl + T * Math.sin(alpha) - W * Math.cos(gamma)) / (m * Math.max(speed, 1));
   const alphaDot = s.q - gammaDot;
 
   // 5. Final coefficients, lift and drag.
-  const co = coefficients({ alpha, alphaDot, q: s.q, de: c.elevatorRad, speed, tailQRatio });
+  const co = coefficients({ alpha, alphaDot, q: s.q, de: c.elevatorRad, speed, tailQRatio, throttle: c.throttle });
   const lift = qS * co.cl; // perpendicular to the direction of travel
   const drag = qS * co.cd; // opposite the direction of travel
 

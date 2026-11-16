@@ -99,12 +99,6 @@ export const LOADING: readonly { name: string; weightLbf: number; x: number; z: 
   { name: 'Right rear passenger', weightLbf: 85, x: 70, z: 24 },
 ];
 
-/**
- * Full-throttle thrust in constant-thrust mode, lbf.
- * NOT FROM SOURCE: placeholder until calibrated against the handbook climb rate.
- */
-export const MAX_THRUST_LBF = 460;
-
 // --- Post-stall extension ---
 // NOT FROM SOURCE: the source tables end near ±20°. Beyond them the wing is modelled
 // as a flat plate: CL = FLAT_PLATE_CL·sin(2α), CD = CD0 + FLAT_PLATE_CD·sin²α,
@@ -120,3 +114,50 @@ export const STABILITY_LINEAR_LIMIT_RAD = 0.5;
 
 /** Engine idle speed, rpm. eng_io320.xml <idlerpm>. Lower bound of the propeller-speed solve. */
 export const IDLE_RPM = 550;
+
+/**
+ * HANDBOOK CALIBRATION.
+ * NOT FROM SOURCE: Leon's priority is to match the Cessna 172P handbook. The unmodified
+ * JSBSim drag table and lift peak give a climb rate about 120 ft/min low and a stall speed
+ * about 3.5 kt high, so these values are fitted (scripts/calibrate.ts) to the handbook
+ * figures in HANDBOOK below. Geometry, mass, the lift curve in cruise, and all
+ * stability coefficients remain the source's.
+ */
+export const CALIBRATION = {
+  /** Zero-lift drag coefficient of the airframe. Target: maximum level speed. */
+  cd0: 0.03,
+  /** Induced-drag factor: CD = cd0 + kInduced·CL² below the stall. Target: best climb rate and speed. */
+  kInduced: 0.0508,
+  /** Multiplier on the lift table at the stall angle, fading to 1 at CL_SCALE_START_RAD. Target: stall speed. */
+  clMaxScale: 1.1359,
+  /** Multiplier on fixed-pitch propeller thrust. Target: best climb rate and maximum level speed. */
+  propThrustScale: 1.0128,
+  /** Extra drag coefficient of a windmilling propeller at idle. Target: power-off glide ratio in constant-thrust mode. */
+  idlePropDragCd: 0.0219,
+  /**
+   * Full-throttle thrust in constant-thrust mode, lbf. Target: the best climb rate at
+   * full throttle equals the handbook's.
+   */
+  maxThrustLbf: 393,
+};
+/** Angle of attack above which clMaxScale starts to apply (end of the lift table's straight part). */
+export const CL_SCALE_START_RAD = 0.09;
+/** Calibrated drag blends back to the source table over this range just below the stall angle. */
+export const DRAG_BLEND_BELOW_STALL_RAD = 0.05;
+/** Windmilling-propeller drag fades linearly to zero by this throttle setting. */
+export const IDLE_DRAG_FADE_THROTTLE = 0.1;
+
+/**
+ * Cessna 172P handbook performance at sea level, 2400 lb.
+ * Maximum speed, climb rate and stall speed confirmed against a published 172P
+ * specification listing; best-climb speed, best-glide speed and glide ratio are
+ * from memory of the handbook and not independently confirmed.
+ */
+export const HANDBOOK = {
+  stallKcas: 51,
+  bestClimbFpm: 700,
+  bestClimbKias: 76,
+  maxLevelKt: 123,
+  bestGlideKias: 65,
+  glideRatio: 9,
+};

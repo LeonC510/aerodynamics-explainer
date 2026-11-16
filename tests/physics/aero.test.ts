@@ -1,10 +1,9 @@
 import { expect, test } from 'vitest';
 import { coefficients, dragCoefficientStatic, liftCoefficientStatic } from '../../src/physics/aero';
 
-test('static lift and drag follow the source tables inside their range', () => {
+test('static lift follows the source table inside its range', () => {
   expect(liftCoefficientStatic(0)).toBeCloseTo(0.25);
-  expect(liftCoefficientStatic(0.28)).toBeCloseTo(1.47);
-  expect(dragCoefficientStatic(0)).toBeCloseTo(0.027 + 0.0052);
+  expect(liftCoefficientStatic(0.09)).toBeCloseTo(0.73);
 });
 test('lift and drag are continuous across the table ends and the post-stall blend', () => {
   for (const a of [-0.09, -0.0873, 0.3491, 0.36, 0.51, -0.24, Math.PI, -Math.PI + 0.001])
@@ -35,4 +34,24 @@ test('pitching moment is continuous when the aircraft tumbles through 180° angl
   expect(Math.abs(cm(Math.PI - 1e-4) - cm(-Math.PI + 1e-4))).toBeLessThan(0.01);
   expect(Math.abs(cm(0.5 + 1e-4) - cm(0.5 - 1e-4))).toBeLessThan(0.01);
   expect(cm(0.2) - cm(0.1)).toBeCloseTo(-0.18); // unchanged inside the normal range
+});
+
+import { CALIBRATION, STALL_ALPHA_RAD } from '../../src/physics/aircraft';
+import { idlePropellerDragCoefficient } from '../../src/physics/aero';
+
+test('below the stall, drag is the calibrated polar CD0 + K·CL²', () => {
+  for (const a of [-0.05, 0, 0.05, 0.1, 0.2]) {
+    const cl = liftCoefficientStatic(a);
+    expect(dragCoefficientStatic(a)).toBeCloseTo(CALIBRATION.cd0 + CALIBRATION.kInduced * cl * cl, 9);
+  }
+});
+test('lift is the source table in cruise and scaled up only toward the stall', () => {
+  expect(liftCoefficientStatic(0.05)).toBeCloseTo(0.25 + (0.48 * 0.05) / 0.09, 9);
+  expect(liftCoefficientStatic(STALL_ALPHA_RAD)).toBeCloseTo(1.47 * CALIBRATION.clMaxScale, 9);
+});
+test('windmilling-propeller drag applies at idle and is gone by 10% throttle', () => {
+  expect(idlePropellerDragCoefficient(0)).toBeCloseTo(CALIBRATION.idlePropDragCd);
+  expect(idlePropellerDragCoefficient(0.05)).toBeCloseTo(CALIBRATION.idlePropDragCd / 2);
+  expect(idlePropellerDragCoefficient(0.1)).toBe(0);
+  expect(idlePropellerDragCoefficient(1)).toBe(0);
 });

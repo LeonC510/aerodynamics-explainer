@@ -1,5 +1,5 @@
 /** Thrust from the engine and propeller, for both thrust modes. */
-import { CP_J, CT_J, IDLE_RPM, MAX_HP, MAX_RPM, MAX_THRUST_LBF, PROP_DIAMETER_FT } from './aircraft';
+import { CALIBRATION, CP_J, CT_J, IDLE_RPM, MAX_HP, MAX_RPM, PROP_DIAMETER_FT } from './aircraft';
 import { powerFactor } from './atmosphere';
 import { interp1 } from './table';
 
@@ -62,12 +62,12 @@ export function thrust(
   const speed = Math.max(axialSpeedFps, 0);
 
   if (!thrustFallsWithSpeed) {
-    const thrustLbf = thr * MAX_THRUST_LBF * powerFactor(rho);
+    const thrustLbf = thr * CALIBRATION.maxThrustLbf * powerFactor(rho);
     return { thrustLbf, rpm: null, inducedVelocityFps: inducedVelocity(thrustLbf, speed, rho) };
   }
 
   const D = PROP_DIAMETER_FT;
   const n = thr === 0 ? IDLE_RPM / 60 : balancedRevsPerSecond(thr, speed, rho);
-  const thrustLbf = interp1(CT_J, speed / (n * D)) * rho * n * n * D ** 4;
+  const thrustLbf = CALIBRATION.propThrustScale * interp1(CT_J, speed / (n * D)) * rho * n * n * D ** 4;
   return { thrustLbf, rpm: n * 60, inducedVelocityFps: inducedVelocity(thrustLbf, speed, rho) };
 }

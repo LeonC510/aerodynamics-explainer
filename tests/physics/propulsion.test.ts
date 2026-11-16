@@ -1,19 +1,19 @@
 import { expect, test } from 'vitest';
-import { MAX_THRUST_LBF } from '../../src/physics/aircraft';
+import { CALIBRATION } from '../../src/physics/aircraft';
 import { RHO0, density } from '../../src/physics/atmosphere';
 import { thrust } from '../../src/physics/propulsion';
 
 const R = RHO0;
 test('constant-thrust mode: thrust is throttle times maximum, at any speed', () => {
-  expect(thrust(0.5, 100, R, false).thrustLbf).toBeCloseTo(0.5 * MAX_THRUST_LBF);
-  expect(thrust(0.5, 250, R, false).thrustLbf).toBeCloseTo(0.5 * MAX_THRUST_LBF);
+  expect(thrust(0.5, 100, R, false).thrustLbf).toBeCloseTo(0.5 * CALIBRATION.maxThrustLbf);
+  expect(thrust(0.5, 250, R, false).thrustLbf).toBeCloseTo(0.5 * CALIBRATION.maxThrustLbf);
   expect(thrust(0.5, 100, R, false).rpm).toBeNull();
 });
 test('constant-thrust mode: thinner air reduces thrust', () => {
-  expect(thrust(1, 100, density(8000, true), false).thrustLbf).toBeLessThan(MAX_THRUST_LBF);
+  expect(thrust(1, 100, density(8000, true), false).thrustLbf).toBeLessThan(CALIBRATION.maxThrustLbf);
 });
 test('throttle is clamped to 0..1', () => {
-  expect(thrust(2, 100, R, false).thrustLbf).toBeCloseTo(MAX_THRUST_LBF);
+  expect(thrust(2, 100, R, false).thrustLbf).toBeCloseTo(CALIBRATION.maxThrustLbf);
   expect(thrust(-1, 100, R, false).thrustLbf).toBe(0);
 });
 test('propeller mode: static full-throttle rpm and thrust are plausible for a fixed-pitch 160 hp', () => {
