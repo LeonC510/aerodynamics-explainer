@@ -1,0 +1,101 @@
+:root {
+  --bg: #f6f4ef;
+  --surface: #fffdf8;
+  --ink: #1f2933;
+  --muted: #6b7682;
+  --line: #d9d4c8;
+  --grid: #e7e2d6;
+  --path: #1d4e89;
+  --forecast: #7d9cc0;
+  --accent: #c2410c;
+  --warn: #b91c1c;
+  --ground: #b9a888;
+  --trace: #1d4e89;
+  --reference: #9a6b1e;
+  --marker: #8b93a0;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181d;
+    --surface: #1b2128;
+    --ink: #e6e9ec;
+    --muted: #94a0ad;
+    --line: #2f3944;
+    --grid: #252d36;
+    --path: #7fb2ec;
+    --forecast: #54779f;
+    --accent: #f59e62;
+    --warn: #f87171;
+    --ground: #5b5140;
+    --trace: #7fb2ec;
+    --reference: #d1a45a;
+    --marker: #6f7a87;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+#app { display: grid; grid-template-columns: 264px minmax(0, 1fr); height: 100vh; }
+
+/* ---------- Left panel ---------- */
+#panel {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 16px 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#panel h1 { font-size: 15px; margin: 0; letter-spacing: 0.01em; }
+#panel h2 {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); margin: 0 0 8px;
+}
+.group { display: flex; flex-direction: column; }
+.yoke { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; align-items: stretch; }
+.yoke input[type="range"] {
+  writing-mode: vertical-lr; direction: rtl; /* top = pull back */
+  width: 28px; height: 190px; margin: 0 auto; accent-color: var(--accent);
+}
+.yoke .ends { display: flex; flex-direction: column; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.yoke .ends strong { color: var(--ink); font-weight: 600; display: block; }
+.readout { font-variant-numeric: tabular-nums; font-size: 13px; }
+.readout b { font-weight: 600; }
+.throttle input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0 4px; }
+.row { display: flex; gap: 8px; align-items: center; }
+button {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 6px; padding: 7px 12px; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; flex: 1; }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.segmented label { padding: 5px 10px; cursor: pointer; font-variant-numeric: tabular-nums; border-left: 1px solid var(--line); }
+.segmented label:first-child { border-left: 0; }
+.segmented input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented label:has(input:checked) { background: var(--ink); color: var(--surface); }
+.segmented label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.check { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; cursor: pointer; }
+.check input { accent-color: var(--accent); margin: 0; translate: 0 1px; }
+.check small { display: block; color: var(--muted); font-size: 12px; }
+.graph-toggles { display: grid; grid-template-columns: 1fr; }
+details summary { cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+details[open] summary { margin-bottom: 8px; }
+.status { color: var(--warn); font-weight: 600; min-height: 1.4em; }
+
+/* ---------- Views ---------- */
+#views { display: grid; grid-template-rows: minmax(220px, 44vh) minmax(0, 1fr); min-width: 0; height: 100vh; }
+#trajectory { border-bottom: 1px solid var(--line); min-height: 0; }
+#graphs { min-height: 0; }
+.scroller { position: relative; width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; }
+#graphs .scroller { overflow-y: auto; }
+.scroller .spacer { position: relative; min-width: 100%; min-height: 100%; }
+.scroller canvas { position: sticky; left: 0; display: block; }
